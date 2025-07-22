@@ -4,6 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExamCard } from "./ExamCard";
+import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
+import { QuestionBankManager } from "./questionbank/QuestionBankManager";
+import { ResultsManager } from "./results/ResultsManager";
+import { UserManagement } from "./users/UserManagement";
+import { SecurityMonitor } from "./security/SecurityMonitor";
 
 interface DashboardProps {
   userRole: 'candidate' | 'admin';
@@ -93,12 +98,15 @@ export function Dashboard({ userRole, onStartExam, onViewResults }: DashboardPro
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="exams">
             {userRole === 'admin' ? 'All Exams' : 'My Exams'}
           </TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="questions">Questions</TabsTrigger>
+          <TabsTrigger value="results">Results</TabsTrigger>
+          {userRole === 'admin' && <TabsTrigger value="users">Users</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -235,47 +243,22 @@ export function Dashboard({ userRole, onStartExam, onViewResults }: DashboardPro
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Trends</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Analytics charts would be displayed here</p>
-                    <p className="text-sm">Integration with charting library needed</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <Award className="h-4 w-4 text-success" />
-                    <div>
-                      <p className="text-sm font-medium">Exam Completed</p>
-                      <p className="text-xs text-muted-foreground">Data Structures & Algorithms - 85%</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <Clock className="h-4 w-4 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium">Exam Started</p>
-                      <p className="text-xs text-muted-foreground">Software Development Fundamentals</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <AnalyticsDashboard userRole={userRole} />
         </TabsContent>
+
+        <TabsContent value="questions" className="space-y-6">
+          <QuestionBankManager />
+        </TabsContent>
+
+        <TabsContent value="results" className="space-y-6">
+          <ResultsManager userRole={userRole} currentUserId="c1" />
+        </TabsContent>
+
+        {userRole === 'admin' && (
+          <TabsContent value="users" className="space-y-6">
+            <UserManagement />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
