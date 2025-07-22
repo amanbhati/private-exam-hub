@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Clock, Shield, AlertTriangle, ChevronLeft, ChevronRight, Flag } from "lucide-react";
+import { Clock, Shield, AlertTriangle, ChevronLeft, ChevronRight, Flag, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { CameraAccess } from "@/components/CameraAccess";
+import { SecurityMonitor } from "@/components/SecurityMonitor";
 
 interface Question {
   id: string;
@@ -31,6 +33,8 @@ export function ExamInterface({ exam, onSubmitExam, onExitExam }: ExamInterfaceP
   const [timeRemaining, setTimeRemaining] = useState(exam.duration * 60); // Convert to seconds
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
   const [isSecure, setIsSecure] = useState(true);
+  const [warningCount, setWarningCount] = useState(0);
+  const [cameraActive, setCameraActive] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -46,18 +50,21 @@ export function ExamInterface({ exam, onSubmitExam, onExitExam }: ExamInterfaceP
     return () => clearInterval(timer);
   }, [answers, onSubmitExam]);
 
-  // Security monitoring (simulated)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        setIsSecure(false);
-        // In a real app, this would log the violation
+  const handleSecurityViolation = (violation: any) => {
+    setWarningCount(prev => prev + 1);
+    setIsSecure(false);
+    
+    // Auto-restore security status after some time if warnings are below threshold
+    setTimeout(() => {
+      if (warningCount < 3) {
+        setIsSecure(true);
       }
-    };
+    }, 10000);
+  };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+  const handleSecurityStatusChange = (secure: boolean) => {
+    setIsSecure(secure);
+  };
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -104,7 +111,13 @@ export function ExamInterface({ exam, onSubmitExam, onExitExam }: ExamInterfaceP
                 isSecure ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
               }`}>
                 <Shield className="h-3 w-3" />
-                {isSecure ? 'Secure Session' : 'Security Warning'}
+                {isSecure ? 'Secure Session' : `Security Warning (${warningCount}/3)`}
+              </div>
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
+                cameraActive ? 'bg-primary/10 text-primary' : 'bg-muted/50 text-muted-foreground'
+              }`}>
+                <Camera className="h-3 w-3" />
+                {cameraActive ? 'Camera Active' : 'Camera Inactive'}
               </div>
             </div>
             
@@ -124,9 +137,9 @@ export function ExamInterface({ exam, onSubmitExam, onExitExam }: ExamInterfaceP
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Question Navigation Sidebar */}
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Question Navigation and Security Sidebar */}
+          <div className="lg:col-span-1 space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Questions</CardTitle>
@@ -156,10 +169,22 @@ export function ExamInterface({ exam, onSubmitExam, onExitExam }: ExamInterfaceP
                 </div>
               </CardContent>
             </Card>
+
+            {/* Security Monitor */}
+            <SecurityMonitor
+              isExamActive={true}
+              onViolation={handleSecurityViolation}
+              onSecurityStatusChange={handleSecurityStatusChange}
+            />
+
+            {/* Camera Access */}
+            <CameraAccess
+              onCameraStatusChange={setCameraActive}
+            />
           </div>
 
           {/* Main Question Area */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-4">
             <Card className="min-h-[500px]">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -172,7 +197,7 @@ export function ExamInterface({ exam, onSubmitExam, onExitExam }: ExamInterfaceP
                       {!isSecure && (
                         <Badge variant="destructive" className="flex items-center gap-1">
                           <AlertTriangle className="h-3 w-3" />
-                          Security Alert
+                          Security Alert ({warningCount}/3)
                         </Badge>
                       )}
                     </div>
